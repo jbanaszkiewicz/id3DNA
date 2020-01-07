@@ -1,4 +1,6 @@
-#ignore files in date folder
+#ignore files in data folder
 data/
 #ignore any data files
 *.dat
+#ignore ipynb chepoint files
+.ipynb_checkpoints
