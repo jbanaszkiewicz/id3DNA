@@ -1,0 +1,4 @@
+#ignore files in date folder
+data/
+#ignore any data files
+*.dat
