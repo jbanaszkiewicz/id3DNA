@@ -2,3 +2,5 @@
 data/
 #ignore any data files
 *.dat
+#ignore ipynb chepoint files
+.ipynb_checkpoints
