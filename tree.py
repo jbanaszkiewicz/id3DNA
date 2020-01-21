@@ -4,6 +4,8 @@ import operator
 from copy import deepcopy
 from math import log
 from anytree import Node, RenderTree
+import os
+
 def loadData(filepath):
     data = []
     with open(filepath) as fp:
@@ -127,7 +129,10 @@ def getPairsPosNeg(p, n):
 
 if __name__== "__main__":
     
-    filepath = './data/spliceATrainKIS.dat'
+    fileAbsPath = os.path.realpath(__file__) 
+    absPath = fileAbsPath.rsplit('/',1)[0]
+
+    filepath =  absPath + '/data/spliceATrainKIS.dat'
     data = loadData(filepath)[1:]
     cutNr = int(data[0])
     df = prepareData(data, filterNS=True)
