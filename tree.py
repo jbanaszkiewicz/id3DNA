@@ -41,7 +41,7 @@ def prepareData(data, filterNS=False):
         return df
 
 
-def countFrequencyClasses(sequences, attributes):
+def countFrequencyClasses(sequences, attributes, classes):
     """
     policz czestosc pozytywnych/negatywnych dla poszczególnych nukleodytów w poszczególnych cechach
     """
@@ -51,7 +51,7 @@ def countFrequencyClasses(sequences, attributes):
     for ridx, row in enumerate(sequences):
         for cidx, column in enumerate(row):
             pAn[cidx][column] += 1
-            if df.y[ridx] == 1:
+            if classes[ridx] == 1:
                 p[cidx][column] += 1
             else:
                 n[cidx][column] += 1
@@ -113,10 +113,12 @@ def informationGain(class1, class2, feature):
     fs = [arg/sum(eArgs) for arg in eArgs]
     fsAtributes = [[value/sum(attribute) for value in attribute] for attribute in eArgsP]
     #licze entropie dla calosci
+    a=3
     entropies = [entropy(value[0], value[1]) for value in fsAtributes]
+    a=3
     return es-sum([entropy*f for f, entropy in zip(fs, entropies)])
 
-def getPairsPosNeg(p, n):
+def getPairsPosNeg(p, n, attributes):
     #biore pary pobry/zly z poszczególnych cech i ich mozliwych opcji
     ePairs = []
     keys = p[0].keys()
@@ -125,7 +127,52 @@ def getPairsPosNeg(p, n):
         ePairs.append(ePair)
     return ePairs
 
+def calcID3(sequences, classes, attributes, nodes):
+    p, n, pAn = countFrequencyClasses(sequences, attributes, classes)
+    frequencies = calculate_frequency(pAn)
+    entropyL = calculate_entropyLabel(classes)
+    #licze liczebnosc klas dobre/zle (target)
+    class1 = classes.count(1)
+    class2 = classes.count(0)
+    ePairs = getPairsPosNeg(p, n, attributes)
+    infGains = [informationGain(class1, class2, pair) for pair in ePairs  ]
+    #NaN wrzucają się tam, gdzie danej litery nie ma. Trzeba to potem jakos lepiej ogarnac
+    informationGainR = np.nan_to_num(infGains)
+    #znajdz atrybut (nukleodyt), ktory ma najwiekszy InformationGain
+    
+    infGainLead = np.where(informationGainR == np.amax(informationGainR))
+    #stworz drzewo
+    if not nodes:
+        nodes.append(Node(infGainLead, sequences=sequences, classes=classes))
+    else:
+        nodes.append(Node(infGainLead, sequences=sequences, classes=classes, parent=nodes[-1]))
+    #podziel dane wg s0 i znowu policz InformationGain
+    
+    dataA = {"sequences": [], 'y': []} 
+    dataC = {"sequences": [], 'y': []} 
+    dataG = {"sequences": [], 'y': []} 
+    dataT = {"sequences": [], 'y': []} 
+    for idx, sequence in enumerate(sequences):
+        if sequence[infGainLead] == 'A':
+            dataA['sequences'].append(sequence)
+            dataA['y'].append(classes[idx])
+        elif sequence[infGainLead] == 'C':
+            dataC['sequences'].append(sequence)
+            dataC['y'].append(classes[idx])
+        elif sequence[infGainLead] == 'G':
+            dataG['sequences'].append(sequence)
+            dataG['y'].append(classes[idx])
+        elif sequence[infGainLead] == 'T':
+            dataT['sequences'].append(sequence)
+            dataT['y'].append(classes[idx])
 
+    # sequences = np.delete(sequences, infGainLead, 1)
+    nodeData = [dataG , dataA , dataT , dataC ]
+    for data in nodeData:
+        data['sequences'] = np.delete(data['sequences'], infGainLead, 1)
+        calcID3(data['sequences'], data['y'], attributes, nodes)
+    
+    return nodes
 
 if __name__== "__main__":
     
@@ -138,49 +185,13 @@ if __name__== "__main__":
     df = prepareData(data, filterNS=True)
 
     classes = list(df.y)
-    attributes = set("".join([i for i in df.seq]))
+    attributes = list(set("".join([i for i in df.seq])))
     sequences = np.array([list(i) for i in df.seq])
-
+    nodes = []
+    data = calcID3(sequences, classes, attributes, nodes)
 
     ##############################################################
-    nodes = []
-    p, n, pAn = countFrequencyClasses(sequences, attributes)
-    frequencies = calculate_frequency(pAn)
-    entropyL = calculate_entropyLabel(classes)
-    #licze liczebnosc klas dobre/zle (target)
-    class1 = classes.count(1)
-    class2 = classes.count(0)
-    ePairs = getPairsPosNeg(p, n)
-    infGains = [informationGain(class1, class2, pair) for pair in ePairs  ]
-    #NaN wrzucają się tam, gdzie danej litery nie ma. Trzeba to potem jakos lepiej ogarnac
-    informationGainR = np.nan_to_num(infGains)
-    #znajdz atrybut (nukleodyt), ktory ma najwiekszy InformationGain
-    
-    infGainLead = np.where(informationGainR == np.amax(informationGainR))
-    #stworz drzewo
-    if not nodes:
-        nodes.append(Node(infGainLead, sequences=sequences, classes=classes))
-    else:
-        nodes.append(Node(infGainLead, sequences=sequences, classes=classes), parent=nodes[-1])
-    #podziel dane wg s0 i znowu policz InformationGain
-    keys = p[0].keys()
-    dataA = {"sequences": [], 'y': []} 
-    dataC = {"sequences": [], 'y': []} 
-    dataG = {"sequences": [], 'y': []} 
-    dataT = {"sequences": [], 'y': []} 
-    for idx, sequence in enumerate(sequences):
-        if sequence[infGainLead] == 'A':
-            dataA['sequences'].append(sequence)
-            dataA['y'].append(df.y[idx])
-        elif sequence[infGainLead] == 'C':
-            dataC['sequences'].append(sequence)
-            dataC['y'].append(df.y[idx])
-        elif sequence[infGainLead] == 'G':
-            dataG['sequences'].append(sequence)
-            dataG['y'].append(df.y[idx])
-        elif sequence[infGainLead] == 'T':
-            dataT['sequences'].append(sequence)
-            dataT['y'].append(df.y[idx])
+
         #doprowadzić dane do stanu na poczatku
 
         ########################################################################
