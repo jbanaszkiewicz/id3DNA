@@ -76,6 +76,8 @@ def singleEntropy(f, nrF):
     Funkcja liczy entropie dla pojedynczego podzbioru cechy
     """
     return -f*log(f, nrF)
+
+
 def entropy(e1, e2, *rest):
     """
     liczy entropie dla cechy
@@ -114,7 +116,6 @@ def informationGain(class1, class2, feature):
     fsAtributes = [[value/sum(attribute) for value in attribute] for attribute in eArgsP]
     #licze entropie dla calosci
     entropies = [entropy(value[0], value[1]) for value in fsAtributes] 
-    a=3
     return es-sum([entropy*f for f, entropy in zip(fs, entropies)])
 
 def getPairsPosNeg(p, n, attributes):
@@ -138,6 +139,12 @@ def calcID3(sequences, classes, attributes, parentNode):
     if not class1 or not class2:
         node = Node('Last', sequences=sequences, classes=classes, parent=parentNode)
         return
+    #TODO tu się dzieje ciekawa akcja. Okazuje się, ze jak w drugim przejsciu drzewo trafia na galaź, gdzie podzbiory C, G, T 
+    # mają tylko negatywne przyklady, to nie da sie dla nich policzyc InformationGain. Trzebaby je wydzielic jako osobne liscie
+    # i dalej nie przetwarzac. 
+    # Zaobserwujesz to ustawiajac breakpoint w linicje w informationGain:
+    #                            entropies = [entropy(value[0], value[1]) for value in fsAtributes] 
+
     infGains = [informationGain(class1, class2, pair) for pair in ePairs  ]
     #NaN wrzucają się tam, gdzie danej litery nie ma. Trzeba to potem jakos lepiej ogarnac
     informationGainR = np.nan_to_num(infGains)
