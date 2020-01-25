@@ -93,8 +93,8 @@ def calculate_entropyLabel(labels):
             p += 1
         else:
             n += 1
-    pf = p/len(labels)
-    nf = n/len(labels)
+    pf = float(p)/len(labels)
+    nf = float(n)/len(labels)
     entropy = -pf*log(pf, 2)-nf*log(nf, 2)
     return entropy
 
@@ -113,8 +113,7 @@ def informationGain(class1, class2, feature):
     fs = [arg/sum(eArgs) for arg in eArgs]
     fsAtributes = [[value/sum(attribute) for value in attribute] for attribute in eArgsP]
     #licze entropie dla calosci
-    a=3
-    entropies = [entropy(value[0], value[1]) for value in fsAtributes]
+    entropies = [entropy(value[0], value[1]) for value in fsAtributes] 
     a=3
     return es-sum([entropy*f for f, entropy in zip(fs, entropies)])
 
@@ -127,14 +126,18 @@ def getPairsPosNeg(p, n, attributes):
         ePairs.append(ePair)
     return ePairs
 
-def calcID3(sequences, classes, attributes, nodes):
+def calcID3(sequences, classes, attributes, parentNode):
+    class1 = classes.count(1)
+    class2 = classes.count(0)
+
     p, n, pAn = countFrequencyClasses(sequences, attributes, classes)
     frequencies = calculate_frequency(pAn)
     entropyL = calculate_entropyLabel(classes)
     #licze liczebnosc klas dobre/zle (target)
-    class1 = classes.count(1)
-    class2 = classes.count(0)
     ePairs = getPairsPosNeg(p, n, attributes)
+    if not class1 or not class2:
+        node = Node('Last', sequences=sequences, classes=classes, parent=parentNode)
+        return
     infGains = [informationGain(class1, class2, pair) for pair in ePairs  ]
     #NaN wrzucają się tam, gdzie danej litery nie ma. Trzeba to potem jakos lepiej ogarnac
     informationGainR = np.nan_to_num(infGains)
@@ -142,10 +145,7 @@ def calcID3(sequences, classes, attributes, nodes):
     
     infGainLead = np.where(informationGainR == np.amax(informationGainR))
     #stworz drzewo
-    if not nodes:
-        nodes.append(Node(infGainLead, sequences=sequences, classes=classes))
-    else:
-        nodes.append(Node(infGainLead, sequences=sequences, classes=classes, parent=nodes[-1]))
+    node = Node(infGainLead, sequences=sequences, classes=classes, parent=parentNode)
     #podziel dane wg s0 i znowu policz InformationGain
     
     dataA = {"sequences": [], 'y': []} 
@@ -170,9 +170,9 @@ def calcID3(sequences, classes, attributes, nodes):
     nodeData = [dataG , dataA , dataT , dataC ]
     for data in nodeData:
         data['sequences'] = np.delete(data['sequences'], infGainLead, 1)
-        calcID3(data['sequences'], data['y'], attributes, nodes)
+        calcID3(data['sequences'], data['y'], attributes, node)
     
-    return nodes
+    
 
 if __name__== "__main__":
     
@@ -187,8 +187,8 @@ if __name__== "__main__":
     classes = list(df.y)
     attributes = list(set("".join([i for i in df.seq])))
     sequences = np.array([list(i) for i in df.seq])
-    nodes = []
-    data = calcID3(sequences, classes, attributes, nodes)
+    root = Node('root')
+    data = calcID3(sequences, classes, attributes, root)
 
     ##############################################################
 
