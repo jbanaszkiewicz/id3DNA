@@ -226,16 +226,19 @@ def calcID3(sequences, classes, attributes, parentNode, atributeLabel):
         indData +=1    
           
 
-def predictSingle(X, root):
+def predictSingle(x, root):
     node = root.children[0]
     i=0
     while node.finalNode ==False:
-        currentAttribute = X[node.idx]
+        currentAttribute = x[node.idx]
         children = node.children
         node = [n  for n in children if n.attributeLabel==currentAttribute][0]
         i +=1
     return node.name
 
+
+def predictBatch(X, root):
+    return [predictSingle(i, root) for i in X]
 
 
 if __name__== "__main__":
@@ -282,10 +285,10 @@ if __name__== "__main__":
             jsonTree = json.load(infile)
         importer = JsonImporter()
         root = importer.import_(jsonTree)
-        sequence = df.seq[0]
-        y = df.y[0]
-        print(sequence)
-        print(y)
+        sequence = df.seq
+        y = df.y
+        # print(sequence)
+        # print(y)
         y_pred = predictSingle(sequence, root)
         print(y_pred)
         # print(RenderTree(root)) 
