@@ -224,27 +224,31 @@ def calcID3(sequences, classes, attributes, parentNode, atributeLabel):
         except ValueError:
             print("cannot delete - data node is empty")
         indData +=1    
-          
 
+def searchFinalNode(x, node, answers):
+    currentAttribute = x[node.idx]
+    children = node.children
+    newNodes = []
+    for chn in children:
+            if currentAttribute==chn.attributeLabel:
+                newNodes.append(chn)
+            elif currentAttribute=='S':
+                if chn.attributeLabel== 'G' or chn.attributeLabel== 'C':
+                newNodes.append(chn)
+            elif currentAttribute=='N':
+                newNodes.append(chn)
+    for n in newNodes:
+        if n.finalNode == True:
+            answers.append(n.name)
+        else:
+            searchFinalNode(x, n, answers)
+        
 def predictSingle(x, root):
     node = root.children[0]
-    i=0
-    while node.finalNode ==False:
-        currentAttribute = x[node.idx]
-        children = node.children
-        node = []
-        for n in children:
-            if currentAttribute==n.attributeLabel:
-                node = n
-            elif currentAttribute=='S':
-                if n.attributeLabel== 'G' or n.attributeLabel== 'C':
-                node.append(n)
-            elif 
+    answers = []
+    searchFinalNode(x, node, answers)
                 
-
-        node = [n  for n in children if n.attributeLabel==currentAttribute]
-        i +=1
-    return node.name
+    return answers
 
 
 def predictBatch(X, root):
