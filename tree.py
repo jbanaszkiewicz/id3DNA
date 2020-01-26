@@ -4,7 +4,10 @@ import operator
 from copy import deepcopy
 from math import log
 from anytree import Node, RenderTree
+from anytree.exporter import JsonExporter
+from anytree.importer import JsonImporter
 import os
+import json
 
 def loadData(filepath):
     data = []
@@ -167,9 +170,9 @@ def calcID3(sequences, classes, attributes, parentNode, atributeLabel):
     # jak działa ten warunek - class1 i class2 to liczby
     if not class1 or not class2:
         if class1 == 0:
-            node = Node('True', sequences=sequences, classes=classes, parent=parentNode)
+            node = Node('True', parent=parentNode)
         else:
-            node = Node('False', sequences=sequences, classes=classes, parent=parentNode)
+            node = Node('False', parent=parentNode)
         return
     #TODO tu się dzieje ciekawa akcja. Okazuje się, ze jak w drugim przejsciu drzewo trafia na galaź, gdzie podzbiory C, G, T 
     # mają tylko negatywne przyklady, to nie da sie dla nich policzyc InformationGain. Trzebaby je wydzielic jako osobne liscie
@@ -188,7 +191,7 @@ def calcID3(sequences, classes, attributes, parentNode, atributeLabel):
 
     #stworz drzewo
     nodeName = str(maxInfGainIdx) +':' + atributeLabel
-    node = Node(nodeName , sequences=sequences, classes=classes, parent=parentNode)
+    node = Node(nodeName, parent=parentNode)
     #podziel dane wg s0 i znowu policz InformationGain
     
     dataA = {"sequences": [], 'y': []} 
@@ -221,9 +224,13 @@ def calcID3(sequences, classes, attributes, parentNode, atributeLabel):
             print("cannot delete - data node is empty")
         indData +=1    
           
+
+def predict(X, tree):
+    pass
+
     
 if __name__== "__main__":
-    
+    treeName = 'tree'
     fileAbsPath = os.path.realpath(__file__) 
     absPath = fileAbsPath.rsplit('/',1)[0]
 
@@ -236,8 +243,18 @@ if __name__== "__main__":
     attributes = list(set("".join([i for i in df.seq])))
     sequences = np.array([list(i) for i in df.seq])
     root = Node('root')
-    data = calcID3(sequences, classes, attributes, root, 'root')
+    calcID3(sequences, classes, attributes, root, 'root')
+    #export tree to json file
+    exporter = JsonExporter()
+    with open(treeName+'.json', 'w') as outfile:
+        json.dump(exporter.export(root), outfile)
 
+    #import tree from json file
+    with open(treeName+'.json') as infile:
+        jsonTree = json.load(infile)
+    importer = JsonImporter()
+    root = importer.import_(jsonTree)
+    print(RenderTree(root))
     fileTreeLog= open(os.path.join(absPath,"treeLog.txt"),"w+")
     for row in RenderTree(root):
         fileTreeLog.write("%s%s\n" % (row.pre, row.node.name))
@@ -246,18 +263,6 @@ if __name__== "__main__":
     #     fileTreeLog.write("%s%s\n" % (pre, node.name))
 
     fileTreeLog.close()     
-
-
-
-
-    ##############################################################
-
-        #doprowadzić dane do stanu na poczatku
-
-        ########################################################################
-    
-
-
 
 
     
