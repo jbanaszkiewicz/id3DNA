@@ -5,6 +5,7 @@ from copy import deepcopy
 from math import log
 from anytree import Node, RenderTree
 import os
+from anytree.dotexport import RenderTreeGraph
 
 def loadData(filepath):
     data = []
@@ -256,13 +257,14 @@ if __name__== "__main__":
 
     fileTreeLog.close()     
 
+    RenderTreeGraph(root).to_picture(os.path.join(absPath,"treeGraph.png"))
 
 
     ##############################################################
 
         #doprowadzić dane do stanu na poczatku
 
-        ########################################################################
+    ##############################################################
     
 
 

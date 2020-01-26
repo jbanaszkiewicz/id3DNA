@@ -6,3 +6,5 @@ data/
 .ipynb_checkpoints
 # ignre .vscode
 .vscode/
+#ignore graph image
+treeGraph.png
