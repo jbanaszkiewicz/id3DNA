@@ -191,15 +191,9 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
 
 
     #stworz drzewo
-<<<<<<< HEAD
     realValueOfPosition = indices[maxInfGainIdx]
     nodeName = str(realValueOfPosition) +':' + atributeLabel
-
-    node = Node(nodeName, idx=maxInfGainIdx, attributeLabel=atributeLabel, parent=parentNode)
-=======
-    nodeName = str(maxInfGainIdx) +':' + atributeLabel
-    node = Node(nodeName, idx=maxInfGainIdx, attributeLabel=atributeLabel, finalNode=False, parent=parentNode)
->>>>>>> be9e567bbc9dcbab76e3d52b173dbe21279f9d46
+    node = Node(nodeName, idx=realValueOfPosition, attributeLabel=atributeLabel, finalNode=False, parent=parentNode)
     #podziel dane wg s0 i znowu policz InformationGain
     
     dataA = {"sequences": [], 'y': []} #,'indices' : []} 
@@ -258,21 +252,12 @@ def predictBatch(X, root):
 
 
 if __name__== "__main__":
-<<<<<<< HEAD
     parser = argparse.ArgumentParser("Program to make id3 tree on DNA data")
     parser.add_argument('mode', type=str, choices=["train", "pred"], help='choose mode of the program- [train, pred]')
     #args = parser.parse_args()
     #print(args)
     #mode = args.mode
     mode = "train"
-=======
-    # parser = argparse.ArgumentParser("Program to make id3 tree on DNA data")
-    # parser.add_argument('mode', type=str, choices=["train", "pred"], help='choose mode of the program- [train, pred]')
-    # args = parser.parse_args()
-    # print(args)
-    # mode = args.mode
-    mode = 'pred'
->>>>>>> be9e567bbc9dcbab76e3d52b173dbe21279f9d46
     treeName = 'tree'
 
     fileAbsPath = os.path.realpath(__file__) 
@@ -289,14 +274,9 @@ if __name__== "__main__":
         classes = list(df.y)
         attributes = list(set("".join([i for i in df.seq])))
         sequences = np.array([list(i) for i in df.seq])
-<<<<<<< HEAD
-        root = Node('root')
         indices = [*range(0, sequences.shape[1])]
-        calcID3(sequences, classes, attributes,indices, root, 'root')
-=======
         root = Node('root', finalNode=False)
-        calcID3(sequences, classes, attributes, root, 'root')
->>>>>>> be9e567bbc9dcbab76e3d52b173dbe21279f9d46
+        calcID3(sequences, classes, attributes,indices, root, 'root')
         #export tree to json file
         exporter = JsonExporter()
         with open(treeName+'.json', 'w') as outfile:
