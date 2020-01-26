@@ -244,7 +244,7 @@ def searchFinalNode(x, node, answers):
                 newNodes.append(chn)
             elif currentAttribute=='S':
                 if chn.attributeLabel== 'G' or chn.attributeLabel== 'C':
-                newNodes.append(chn)
+                    newNodes.append(chn)
             elif currentAttribute=='N':
                 newNodes.append(chn)
     for n in newNodes:
@@ -255,18 +255,10 @@ def searchFinalNode(x, node, answers):
         
 def predictSingle(x, root):
     node = root.children[0]
-<<<<<<< HEAD
-    while node.finalNode ==False:
-        currentAttribute = x[node.idx]
-        children = node.children
-        node = [n  for n in children if n.attributeLabel==currentAttribute][0]
-    return node.name
-=======
     answers = []
     searchFinalNode(x, node, answers)
                 
     return answers
->>>>>>> predNS
 
 
 def predictBatch(X, root):
@@ -321,11 +313,11 @@ if __name__== "__main__":
         sequences = df.seq
         ys = df.y
         # print(sequence)
-        # print(y)
+        print(np.shape(ys))
         y_preds = predictBatch(sequences, root)
         answers = {'good': 0, 'bad': 0}
         for y, y_pred in zip(ys, y_preds):
-            if y == y_pred:
+            if y == y_pred[0]:
                 answers['good'] += 1
             else:
                 answers['bad'] += 1
