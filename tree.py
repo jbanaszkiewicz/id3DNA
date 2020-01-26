@@ -5,6 +5,7 @@ from copy import deepcopy
 from math import log
 from anytree import Node, RenderTree
 from anytree.exporter import JsonExporter
+from anytree.importer import JsonImporter
 import os
 import json
 
@@ -169,9 +170,9 @@ def calcID3(sequences, classes, attributes, parentNode):
     # jak działa ten warunek - class1 i class2 to liczby
     if not class1 or not class2:
         if class1 == 0:
-            node = Node('True', sequences=sequences, classes=classes, parent=parentNode)
+            node = Node('True', parent=parentNode)
         else:
-            node = Node('False', sequences=sequences, classes=classes, parent=parentNode)
+            node = Node('False', parent=parentNode)
         return
     #TODO tu się dzieje ciekawa akcja. Okazuje się, ze jak w drugim przejsciu drzewo trafia na galaź, gdzie podzbiory C, G, T 
     # mają tylko negatywne przyklady, to nie da sie dla nich policzyc InformationGain. Trzebaby je wydzielic jako osobne liscie
@@ -189,7 +190,7 @@ def calcID3(sequences, classes, attributes, parentNode):
 
 
     #stworz drzewo
-    node = Node(maxInfGainIdx, sequences=sequences, classes=classes, parent=parentNode)
+    node = Node(maxInfGainIdx, parent=parentNode)
     #podziel dane wg s0 i znowu policz InformationGain
     
     dataA = {"sequences": [], 'y': []} 
@@ -240,10 +241,15 @@ if __name__== "__main__":
     calcID3(sequences, classes, attributes, root)
     #export tree to json file
     exporter = JsonExporter()
-    exporter.export(root)
     with open(treeName+'.json', 'w') as outfile:
-        json.dump(exporter, outfile)
+        json.dump(exporter.export(root), outfile)
 
+    #import tree from json file
+    with open(treeName+'.json') as infile:
+        jsonTree = json.load(infile)
+    importer = JsonImporter()
+    root = importer.import_(jsonTree)
+    print(RenderTree(root))
     fileTreeLog= open(os.path.join(absPath,"treeLog.txt"),"w+")
 
     for pre, fill, node in RenderTree(root):
