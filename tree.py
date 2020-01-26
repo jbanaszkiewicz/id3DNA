@@ -191,7 +191,7 @@ def calcID3(sequences, classes, attributes, parentNode, atributeLabel):
 
     #stworz drzewo
     nodeName = str(maxInfGainIdx) +':' + atributeLabel
-    node = Node(nodeName, parent=parentNode)
+    node = Node(nodeName, idx=maxInfGainIdx, attributeLabel=atributeLabel, parent=parentNode)
     #podziel dane wg s0 i znowu policz InformationGain
     
     dataA = {"sequences": [], 'y': []} 
