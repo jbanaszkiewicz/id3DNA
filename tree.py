@@ -9,6 +9,7 @@ from anytree.importer import JsonImporter
 import os
 import json
 import argparse
+from sklearn.model_selection import KFold
 
 def loadData(filepath):
     data = []
@@ -255,7 +256,7 @@ if __name__== "__main__":
     #args = parser.parse_args()
     #print(args)
     #mode = args.mode
-    mode = "pred"
+    mode = "train"
     treeName = 'tree'
 
     fileAbsPath = os.path.realpath(__file__) 
@@ -274,6 +275,8 @@ if __name__== "__main__":
         sequences = np.array([list(i) for i in df.seq])
         indices = [*range(0, sequences.shape[1])]
         root = Node('root', finalNode=False)
+        kf = KFold(n_splits=5, random_state=None, shuffle=True)
+
         calcID3(sequences, classes, attributes,indices, root, 'root')
         #export tree to json file
         exporter = JsonExporter()
