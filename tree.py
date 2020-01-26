@@ -252,12 +252,12 @@ def predictBatch(X, root):
 
 
 if __name__== "__main__":
-    parser = argparse.ArgumentParser("Program to make id3 tree on DNA data")
-    parser.add_argument('mode', type=str, choices=["train", "pred"], help='choose mode of the program- [train, pred]')
+    # parser = argparse.ArgumentParser("Program to make id3 tree on DNA data")
+    # parser.add_argument('mode', type=str, choices=["train", "pred"], help='choose mode of the program- [train, pred]')
     #args = parser.parse_args()
     #print(args)
     #mode = args.mode
-    mode = "train"
+    mode = "pred"
     treeName = 'tree'
 
     fileAbsPath = os.path.realpath(__file__) 
@@ -296,10 +296,10 @@ if __name__== "__main__":
             jsonTree = json.load(infile)
         importer = JsonImporter()
         root = importer.import_(jsonTree)
-        sequence = df.seq
-        y = df.y
+        sequence = df.seq[0]
+        y = df.y[0]
         # print(sequence)
-        # print(y)
+        print(y)
         y_pred = predictSingle(sequence, root)
         print(y_pred)
         # print(RenderTree(root)) 
