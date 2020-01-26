@@ -8,6 +8,7 @@ from anytree.exporter import JsonExporter
 from anytree.importer import JsonImporter
 import os
 import json
+import argparse
 
 def loadData(filepath):
     data = []
@@ -230,39 +231,47 @@ def predict(X, tree):
 
     
 if __name__== "__main__":
+    parser = argparse.ArgumentParser("Program to make id3 tree on DNA data")
+    parser.add_argument('mode', type=str, choices=["train", "pred"], help='choose mode of the program- [train, pred]')
+    args = parser.parse_args()
+    print(args)
+    mode = args.mode
     treeName = 'tree'
-    fileAbsPath = os.path.realpath(__file__) 
-    absPath = fileAbsPath.rsplit('/',1)[0]
+    if mode == "train":
+        fileAbsPath = os.path.realpath(__file__) 
+        absPath = fileAbsPath.rsplit('/',1)[0]
 
-    filepath =  absPath + '/data/spliceATrainKIS.dat'
-    data = loadData(filepath)[1:]
-    cutNr = int(data[0])
-    df = prepareData(data, filterNS=True)
+        filepath =  absPath + '/data/spliceATrainKIS.dat'
+        data = loadData(filepath)[1:]
+        cutNr = int(data[0])
+        df = prepareData(data, filterNS=True)
 
-    classes = list(df.y)
-    attributes = list(set("".join([i for i in df.seq])))
-    sequences = np.array([list(i) for i in df.seq])
-    root = Node('root')
-    calcID3(sequences, classes, attributes, root, 'root')
-    #export tree to json file
-    exporter = JsonExporter()
-    with open(treeName+'.json', 'w') as outfile:
-        json.dump(exporter.export(root), outfile)
+        classes = list(df.y)
+        attributes = list(set("".join([i for i in df.seq])))
+        sequences = np.array([list(i) for i in df.seq])
+        root = Node('root')
+        calcID3(sequences, classes, attributes, root, 'root')
+        #export tree to json file
+        exporter = JsonExporter()
+        with open(treeName+'.json', 'w') as outfile:
+            json.dump(exporter.export(root), outfile)
 
-    #import tree from json file
-    with open(treeName+'.json') as infile:
-        jsonTree = json.load(infile)
-    importer = JsonImporter()
-    root = importer.import_(jsonTree)
-    print(RenderTree(root))
-    fileTreeLog= open(os.path.join(absPath,"treeLog.txt"),"w+")
-    for row in RenderTree(root):
-        fileTreeLog.write("%s%s\n" % (row.pre, row.node.name))
-   
-    # for pre, fill, node in RenderTree(root):
-    #     fileTreeLog.write("%s%s\n" % (pre, node.name))
+        fileTreeLog= open(os.path.join(absPath,"treeLog.txt"),"w+")
+        for row in RenderTree(root):
+            fileTreeLog.write("%s%s\n" % (row.pre, row.node.name))
+    
+        # for pre, fill, node in RenderTree(root):
+        #     fileTreeLog.write("%s%s\n" % (pre, node.name))
 
-    fileTreeLog.close()     
+        fileTreeLog.close()  
+    elif mode == "pred":
+        #import tree from json file
+        with open(treeName+'.json') as infile:
+            jsonTree = json.load(infile)
+        importer = JsonImporter()
+        root = importer.import_(jsonTree)
+        print(RenderTree(root)) 
+      
 
 
     
