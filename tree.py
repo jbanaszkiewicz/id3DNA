@@ -63,7 +63,7 @@ def calculate_frequency(pAn):
     p = list of dictionaries caunting positive& negative for attributes in features
     y - output (0, 1)
     """
-    totalInRow = [sum(row.values()) for row in pAn]
+    totalInRow = [sum(row.values()) for row in pAn] #moze dla innych danych to bedzie mialo sens ale na razie wszedzie jest stała - do optymalizacji 
     frequencies = deepcopy(pAn)
     for row, rowSum in zip(frequencies, totalInRow):
         for key in row:
@@ -75,7 +75,10 @@ def singleEntropy(f, nrF):
     """
     Funkcja liczy entropie dla pojedynczego podzbioru cechy
     """
-    return -f*log(f, nrF)
+    entropy = 0
+    if f > 0:
+        entropy = -f*log(f, nrF)
+    return entropy
 
 
 def entropy(e1, e2, *rest):
@@ -95,15 +98,25 @@ def calculate_entropyLabel(labels):
             p += 1
         else:
             n += 1
-    pf = float(p)/len(labels)
-    nf = float(n)/len(labels)
-    entropy = -pf*log(pf, 2)-nf*log(nf, 2)
+
+    pf = 0
+    nf = 0
+    count = len(labels)
+    if count >0: 
+        pf = float(p)/len(labels)
+        nf = float(n)/len(labels)
+   
+    if pf == 0 or nf == 0:
+       entropy = 0
+    else:
+       entropy = -pf*log(pf, 2)- nf*log(nf, 2)
+
     return entropy
 
 
 def informationGain(class1, class2, feature):
     #licze entropie E(S)
-    es = entropy(class1, class2)
+    es = entropy(class1, class2) # niewydajna funkcja do optymalizacji - mozna zamienic w jedno rownanie
 #     if not rest:
 #         eArgsP = np.array([e1pair, e2pair]).astype(float)
 #     else:
@@ -113,13 +126,26 @@ def informationGain(class1, class2, feature):
     eArgs = [sum(e) for e in eArgsP]
     #licze czestotliwosci 
     fs = [arg/sum(eArgs) for arg in eArgs]
-    fsAtributes = [[value/sum(attribute) for value in attribute] for attribute in eArgsP]
+    #fsAtributes = [[value/sum(attribute) for value in attribute] for attribute in eArgsP]
+    
+    fsAtributes = []
+    for arg in eArgsP:
+        summed = sum(arg)
+        fp = 0
+        fn = 0  
+        if summed > 0:
+            fp = arg[0] / summed
+            fn = arg[1] / summed                
+        fsAtributes.append([fp,fn])
+
     #licze entropie dla calosci
     entropies = [entropy(value[0], value[1]) for value in fsAtributes] 
-    return es-sum([entropy*f for f, entropy in zip(fs, entropies)])
+    ids = sum([entropy*f for f, entropy in zip(fs, entropies)]) # wyglada na to ze kolejnosc acgt czy gtca nie jest wazna 
+    infgain = es- ids
+    return infgain
 
 def getPairsPosNeg(p, n, attributes):
-    #biore pary pobry/zly z poszczególnych cech i ich mozliwych opcji
+    #biore pary dobry/zly z poszczególnych cech i ich mozliwych opcji
     ePairs = []
     keys = p[0].keys()
     for featureP, featureN in zip(p, n):
@@ -132,10 +158,13 @@ def calcID3(sequences, classes, attributes, parentNode):
     class2 = classes.count(0)
 
     p, n, pAn = countFrequencyClasses(sequences, attributes, classes)
-    frequencies = calculate_frequency(pAn)
+    frequencies = calculate_frequency(pAn) 
     entropyL = calculate_entropyLabel(classes)
     #licze liczebnosc klas dobre/zle (target)
-    ePairs = getPairsPosNeg(p, n, attributes)
+    ePairs = getPairsPosNeg(p, n, attributes) #attributes nie jest używane tutaj
+                                              # w frequencies parametry są policzone w kolejności ACGT, a w ePairs kolejność jest inna - GTAC - to moze byc dalej wazne...sprawdze
+
+    # jak działa ten warunek - class1 i class2 to liczby
     if not class1 or not class2:
         node = Node('Last', sequences=sequences, classes=classes, parent=parentNode)
         return
@@ -147,12 +176,15 @@ def calcID3(sequences, classes, attributes, parentNode):
 
     infGains = [informationGain(class1, class2, pair) for pair in ePairs  ]
     #NaN wrzucają się tam, gdzie danej litery nie ma. Trzeba to potem jakos lepiej ogarnac
-    informationGainR = np.nan_to_num(infGains)
+    #informationGainR = np.nan_to_num(infGains)
     #znajdz atrybut (nukleodyt), ktory ma najwiekszy InformationGain
-    
-    infGainLead = np.where(informationGainR == np.amax(informationGainR))
+     
+    #infGainLead = np.where(informationGainR == np.amax(informationGainR))
+    maxInfGainIdx = infGains.index(max(infGains))   #jeśli jest wiecej niz jedna wartosc jest maksymalna to zwraca pierwszą z listy
+
+
     #stworz drzewo
-    node = Node(infGainLead, sequences=sequences, classes=classes, parent=parentNode)
+    node = Node(maxInfGainIdx, sequences=sequences, classes=classes, parent=parentNode)
     #podziel dane wg s0 i znowu policz InformationGain
     
     dataA = {"sequences": [], 'y': []} 
@@ -160,27 +192,29 @@ def calcID3(sequences, classes, attributes, parentNode):
     dataG = {"sequences": [], 'y': []} 
     dataT = {"sequences": [], 'y': []} 
     for idx, sequence in enumerate(sequences):
-        if sequence[infGainLead] == 'A':
+        if sequence[maxInfGainIdx] == 'A':
             dataA['sequences'].append(sequence)
             dataA['y'].append(classes[idx])
-        elif sequence[infGainLead] == 'C':
+        elif sequence[maxInfGainIdx] == 'C':
             dataC['sequences'].append(sequence)
             dataC['y'].append(classes[idx])
-        elif sequence[infGainLead] == 'G':
+        elif sequence[maxInfGainIdx] == 'G':
             dataG['sequences'].append(sequence)
             dataG['y'].append(classes[idx])
-        elif sequence[infGainLead] == 'T':
+        elif sequence[maxInfGainIdx] == 'T':
             dataT['sequences'].append(sequence)
-            dataT['y'].append(classes[idx])
+            dataT['y'].append(classes[idx])         
 
     # sequences = np.delete(sequences, infGainLead, 1)
     nodeData = [dataG , dataA , dataT , dataC ]
     for data in nodeData:
-        data['sequences'] = np.delete(data['sequences'], infGainLead, 1)
-        calcID3(data['sequences'], data['y'], attributes, node)
+        try :
+            data['sequences'] = np.delete(data['sequences'], maxInfGainIdx, 1)
+            calcID3(data['sequences'], data['y'], attributes, node) 
+        except ValueError:
+            print("cannot delete - data node is empty")
+          
     
-    
-
 if __name__== "__main__":
     
     fileAbsPath = os.path.realpath(__file__) 
@@ -196,6 +230,16 @@ if __name__== "__main__":
     sequences = np.array([list(i) for i in df.seq])
     root = Node('root')
     data = calcID3(sequences, classes, attributes, root)
+
+    fileTreeLog= open(os.path.join(absPath,"treeLog.txt"),"w+")
+
+    for pre, fill, node in RenderTree(root):
+        fileTreeLog.write("%s%s\n" % (pre, node.name))
+
+    fileTreeLog.close()     
+
+
+
 
     ##############################################################
 
