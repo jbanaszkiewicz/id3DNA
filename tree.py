@@ -10,6 +10,8 @@ import os
 import json
 import argparse
 from anytree.dotexport import RenderTreeGraph
+from sklearn.model_selection import KFold
+import pickle
 
 def loadData(filepath):
     data = []
@@ -263,6 +265,8 @@ def searchFinalNode(x, node, answers):
                 newNodes.append(chn)
     for n in newNodes:
         if n.finalNode == True:
+            if type(n.name)!=int:
+                print(n)
             answers.append(n.name)
         else:
             searchFinalNode(x, n, answers)
@@ -295,13 +299,32 @@ if __name__== "__main__":
     data = loadData(filepath)[1:]
     cutNr = int(data[0])
     df = prepareData(data, filterNS=True)
+
+    #cross validation
+    classes = list(df.y)
+    attributes = list(set("".join([i for i in df.seq])))
+    sequences = np.array([list(i) for i in df.seq])
+    # kf = KFold(n_splits=10, shuffle=True)
+    # idxs = [(trainIdxs, testIdxs) for trainIdxs, testIdxs in kf.split(classes)]
+    # portion1 = idxs[0]
+    # with open("indeksy.txt", "wb") as fp:   
+    #     pickle.dump(portion1, fp)
+
+    with open("indeksy.txt", "rb") as fp:   # Unpickling
+        portion1 = pickle.load(fp)
+
+    sequencesTrain = [sequences[idx] for idx in portion1[0]]
+    sequencesVal = [sequences[idx] for idx in portion1[1]]
+
+    classesTrain = [classes[idx] for idx in portion1[0]]
+    classesVal = [classes[idx] for idx in portion1[1]]
+    
     
     if mode == "train":
         
 
-        classes = list(df.y)
-        attributes = list(set("".join([i for i in df.seq])))
-        sequences = np.array([list(i) for i in df.seq])
+        sequences = np.array(sequencesTrain)
+        classes = classesTrain
         indices = [*range(0, sequences.shape[1])]
         root = Node('root', finalNode=False)
         calcID3(sequences, classes, attributes,indices, root, 'root')
@@ -319,13 +342,15 @@ if __name__== "__main__":
 
         fileTreeLog.close()  
     elif mode == "pred":
+
+        sequences = sequencesVal
+        ys = classesVal
+
         #import tree from json file
         with open(treeName+'.json') as infile:
             jsonTree = json.load(infile)
         importer = JsonImporter()
         root = importer.import_(jsonTree)
-        sequences = df.seq
-        ys = df.y
         # print(sequence)
         print(np.shape(ys))
         y_preds = predictBatch(sequences, root)
