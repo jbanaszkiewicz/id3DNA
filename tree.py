@@ -171,9 +171,9 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
     # jak działa ten warunek - class1 i class2 to liczby
     if not class1 or not class2:
         if class1 == 0:
-            node = Node('True', parent=parentNode)
+            node = Node('True', attributeLabel=atributeLabel, finalNode=True, parent=parentNode)
         else:
-            node = Node('False', parent=parentNode)
+            node = Node('False', attributeLabel=atributeLabel, finalNode=True, parent=parentNode)
         return
     #TODO tu się dzieje ciekawa akcja. Okazuje się, ze jak w drugim przejsciu drzewo trafia na galaź, gdzie podzbiory C, G, T 
     # mają tylko negatywne przyklady, to nie da sie dla nich policzyc InformationGain. Trzebaby je wydzielic jako osobne liscie
@@ -191,10 +191,15 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
 
 
     #stworz drzewo
+<<<<<<< HEAD
     realValueOfPosition = indices[maxInfGainIdx]
     nodeName = str(realValueOfPosition) +':' + atributeLabel
 
     node = Node(nodeName, idx=maxInfGainIdx, attributeLabel=atributeLabel, parent=parentNode)
+=======
+    nodeName = str(maxInfGainIdx) +':' + atributeLabel
+    node = Node(nodeName, idx=maxInfGainIdx, attributeLabel=atributeLabel, finalNode=False, parent=parentNode)
+>>>>>>> be9e567bbc9dcbab76e3d52b173dbe21279f9d46
     #podziel dane wg s0 i znowu policz InformationGain
     
     dataA = {"sequences": [], 'y': []} #,'indices' : []} 
@@ -237,33 +242,61 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
         indData +=1    
           
 
-def predict(X, tree):
-    pass
+def predictSingle(x, root):
+    node = root.children[0]
+    i=0
+    while node.finalNode ==False:
+        currentAttribute = x[node.idx]
+        children = node.children
+        node = [n  for n in children if n.attributeLabel==currentAttribute][0]
+        i +=1
+    return node.name
 
-    
+
+def predictBatch(X, root):
+    return [predictSingle(i, root) for i in X]
+
+
 if __name__== "__main__":
+<<<<<<< HEAD
     parser = argparse.ArgumentParser("Program to make id3 tree on DNA data")
     parser.add_argument('mode', type=str, choices=["train", "pred"], help='choose mode of the program- [train, pred]')
     #args = parser.parse_args()
     #print(args)
     #mode = args.mode
     mode = "train"
+=======
+    # parser = argparse.ArgumentParser("Program to make id3 tree on DNA data")
+    # parser.add_argument('mode', type=str, choices=["train", "pred"], help='choose mode of the program- [train, pred]')
+    # args = parser.parse_args()
+    # print(args)
+    # mode = args.mode
+    mode = 'pred'
+>>>>>>> be9e567bbc9dcbab76e3d52b173dbe21279f9d46
     treeName = 'tree'
-    if mode == "train":
-        fileAbsPath = os.path.realpath(__file__) 
-        absPath = fileAbsPath.rsplit('/',1)[0]
 
-        filepath =  absPath + '/data/spliceATrainKIS.dat'
-        data = loadData(filepath)[1:]
-        cutNr = int(data[0])
-        df = prepareData(data, filterNS=True)
+    fileAbsPath = os.path.realpath(__file__) 
+    absPath = fileAbsPath.rsplit('/',1)[0]
+
+    filepath =  absPath + '/data/spliceATrainKIS.dat'
+    data = loadData(filepath)[1:]
+    cutNr = int(data[0])
+    df = prepareData(data, filterNS=True)
+    
+    if mode == "train":
+        
 
         classes = list(df.y)
         attributes = list(set("".join([i for i in df.seq])))
         sequences = np.array([list(i) for i in df.seq])
+<<<<<<< HEAD
         root = Node('root')
         indices = [*range(0, sequences.shape[1])]
         calcID3(sequences, classes, attributes,indices, root, 'root')
+=======
+        root = Node('root', finalNode=False)
+        calcID3(sequences, classes, attributes, root, 'root')
+>>>>>>> be9e567bbc9dcbab76e3d52b173dbe21279f9d46
         #export tree to json file
         exporter = JsonExporter()
         with open(treeName+'.json', 'w') as outfile:
@@ -283,7 +316,13 @@ if __name__== "__main__":
             jsonTree = json.load(infile)
         importer = JsonImporter()
         root = importer.import_(jsonTree)
-        print(RenderTree(root)) 
+        sequence = df.seq
+        y = df.y
+        # print(sequence)
+        # print(y)
+        y_pred = predictSingle(sequence, root)
+        print(y_pred)
+        # print(RenderTree(root)) 
       
 
 
