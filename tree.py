@@ -172,9 +172,9 @@ def calcID3(sequences, classes, attributes, parentNode, atributeLabel):
     # jak działa ten warunek - class1 i class2 to liczby
     if not class1 or not class2:
         if class1 == 0:
-            node = Node('True', attributeLabel=atributeLabel, finalNode=True, parent=parentNode)
+            node = Node(0, attributeLabel=atributeLabel, finalNode=True, parent=parentNode)
         else:
-            node = Node('False', attributeLabel=atributeLabel, finalNode=True, parent=parentNode)
+            node = Node(1, attributeLabel=atributeLabel, finalNode=True, parent=parentNode)
         return
     #TODO tu się dzieje ciekawa akcja. Okazuje się, ze jak w drugim przejsciu drzewo trafia na galaź, gdzie podzbiory C, G, T 
     # mają tylko negatywne przyklady, to nie da sie dla nich policzyc InformationGain. Trzebaby je wydzielic jako osobne liscie
@@ -250,7 +250,7 @@ def searchFinalNode(x, node, answers):
                 newNodes.append(chn)
             elif currentAttribute=='S':
                 if chn.attributeLabel== 'G' or chn.attributeLabel== 'C':
-                newNodes.append(chn)
+                    newNodes.append(chn)
             elif currentAttribute=='N':
                 newNodes.append(chn)
     for n in newNodes:
@@ -315,12 +315,12 @@ if __name__== "__main__":
             jsonTree = json.load(infile)
         importer = JsonImporter()
         root = importer.import_(jsonTree)
-        sequence = df.seq
-        y = df.y
+        sequences = df.seq
+        ys = df.y
         # print(sequence)
-        # print(y)
-        y_pred = predictSingle(sequence, root)
-        print(y_pred)
+        print(np.shape(ys))
+        y_pred = predictBatch(sequences, root)
+        print(
         # print(RenderTree(root)) 
       
 
