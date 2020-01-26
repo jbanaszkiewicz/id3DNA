@@ -171,11 +171,7 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
 
     # jak działa ten warunek - class1 i class2 to liczby
     if not class1 or not class2:
-<<<<<<< HEAD
         if class1 == 0:
-=======
-        if class1==0:
->>>>>>> predNS2
             node = Node(0, attributeLabel=atributeLabel, finalNode=True, parent=parentNode)
         else:
             node = Node(1, attributeLabel=atributeLabel, finalNode=True, parent=parentNode)
@@ -222,7 +218,6 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
             #dataG['indices'].append(indices)
         elif sequence[maxInfGainIdx] == 'T':
             dataT['sequences'].append(sequence)
-<<<<<<< HEAD
             dataT['y'].append(classes[idx])    
         elif sequence[maxInfGainIdx] == 'S': 
             dataC['sequences'].append(sequence)
@@ -239,11 +234,6 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
             dataT['sequences'].append(sequence)
             dataT['y'].append(classes[idx])
 
-=======
-            dataT['y'].append(classes[idx])                  
-            #dataT['indices'].append(indices)
-  
->>>>>>> predNS2
 
     # sequences = np.delete(sequences, infGainLead, 1)
     nodeData = [dataG , dataA , dataT , dataC ]
@@ -304,7 +294,7 @@ if __name__== "__main__":
     filepath =  absPath + '/data/spliceATrainKIS.dat'
     data = loadData(filepath)[1:]
     cutNr = int(data[0])
-    df = prepareData(data, filterNS=False)
+    df = prepareData(data, filterNS=True)
     
     if mode == "train":
         
@@ -338,19 +328,15 @@ if __name__== "__main__":
         ys = df.y
         # print(sequence)
         print(np.shape(ys))
-<<<<<<< HEAD
-        y_pred = predictBatch(sequences, root)
-        print(
-=======
         y_preds = predictBatch(sequences, root)
+        y_preds = [y_pred[0] if len(y_pred)==1 else int(np.median(y_pred)) for y_pred in y_preds]
         answers = {'good': 0, 'bad': 0}
         for y, y_pred in zip(ys, y_preds):
-            if y == y_pred[0]:
+            if y == y_pred:
                 answers['good'] += 1
             else:
                 answers['bad'] += 1
         print(answers)
->>>>>>> predNS2
         # print(RenderTree(root)) 
       
 
