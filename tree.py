@@ -206,7 +206,22 @@ def calcID3(sequences, classes, attributes, parentNode):
             dataG['y'].append(classes[idx])
         elif sequence[maxInfGainIdx] == 'T':
             dataT['sequences'].append(sequence)
-            dataT['y'].append(classes[idx])         
+            dataT['y'].append(classes[idx])    
+        elif sequence[maxInfGainIdx] == 'S': 
+            dataC['sequences'].append(sequence)
+            dataC['y'].append(classes[idx]) 
+            dataG['sequences'].append(sequence)
+            dataG['y'].append(classes[idx])
+        elif sequence[maxInfGainIdx] == 'N': 
+            dataA['sequences'].append(sequence)
+            dataA['y'].append(classes[idx])         
+            dataC['sequences'].append(sequence)
+            dataC['y'].append(classes[idx])
+            dataG['sequences'].append(sequence)
+            dataG['y'].append(classes[idx])         
+            dataT['sequences'].append(sequence)
+            dataT['y'].append(classes[idx])
+
 
     # sequences = np.delete(sequences, infGainLead, 1)
     nodeData = [dataG , dataA , dataT , dataC ]
@@ -226,7 +241,7 @@ if __name__== "__main__":
     filepath =  absPath + '/data/spliceATrainKIS.dat'
     data = loadData(filepath)[1:]
     cutNr = int(data[0])
-    df = prepareData(data, filterNS=True)
+    df = prepareData(data, filterNS=False)
 
     classes = list(df.y)
     attributes = list(set("".join([i for i in df.seq])))
@@ -240,7 +255,6 @@ if __name__== "__main__":
         fileTreeLog.write("%s%s\n" % (pre, node.name))
 
     fileTreeLog.close()     
-
 
 
 
