@@ -153,7 +153,7 @@ def getPairsPosNeg(p, n, attributes):
         ePairs.append(ePair)
     return ePairs
 
-def calcID3(sequences, classes, attributes, parentNode):
+def calcID3(sequences, classes, attributes, parentNode, atributeLabel):
     class1 = classes.count(1)
     class2 = classes.count(0)
 
@@ -187,7 +187,8 @@ def calcID3(sequences, classes, attributes, parentNode):
 
 
     #stworz drzewo
-    node = Node(maxInfGainIdx, sequences=sequences, classes=classes, parent=parentNode)
+    nodeName = str(maxInfGainIdx) +':' + atributeLabel
+    node = Node(nodeName , sequences=sequences, classes=classes, parent=parentNode)
     #podziel dane wg s0 i znowu policz InformationGain
     
     dataA = {"sequences": [], 'y': []} 
@@ -210,12 +211,15 @@ def calcID3(sequences, classes, attributes, parentNode):
 
     # sequences = np.delete(sequences, infGainLead, 1)
     nodeData = [dataG , dataA , dataT , dataC ]
+    labels = ['G','A','T','C']
+    indData = 0
     for data in nodeData:
         try :
             data['sequences'] = np.delete(data['sequences'], maxInfGainIdx, 1)
-            calcID3(data['sequences'], data['y'], attributes, node) 
+            calcID3(data['sequences'], data['y'], attributes, node, labels[indData]) 
         except ValueError:
             print("cannot delete - data node is empty")
+        indData +=1    
           
     
 if __name__== "__main__":
@@ -232,12 +236,14 @@ if __name__== "__main__":
     attributes = list(set("".join([i for i in df.seq])))
     sequences = np.array([list(i) for i in df.seq])
     root = Node('root')
-    data = calcID3(sequences, classes, attributes, root)
+    data = calcID3(sequences, classes, attributes, root, 'root')
 
     fileTreeLog= open(os.path.join(absPath,"treeLog.txt"),"w+")
-
-    for pre, fill, node in RenderTree(root):
-        fileTreeLog.write("%s%s\n" % (pre, node.name))
+    for row in RenderTree(root):
+        fileTreeLog.write("%s%s\n" % (row.pre, row.node.name))
+   
+    # for pre, fill, node in RenderTree(root):
+    #     fileTreeLog.write("%s%s\n" % (pre, node.name))
 
     fileTreeLog.close()     
 
