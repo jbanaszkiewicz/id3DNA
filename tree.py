@@ -4,7 +4,9 @@ import operator
 from copy import deepcopy
 from math import log
 from anytree import Node, RenderTree
+from anytree.exporter import JsonExporter
 import os
+import json
 
 def loadData(filepath):
     data = []
@@ -216,10 +218,13 @@ def calcID3(sequences, classes, attributes, parentNode):
             calcID3(data['sequences'], data['y'], attributes, node) 
         except ValueError:
             print("cannot delete - data node is empty")
-          
+
+def predict(X, tree):
+    pass
+
     
 if __name__== "__main__":
-    
+    treeName = 'tree'
     fileAbsPath = os.path.realpath(__file__) 
     absPath = fileAbsPath.rsplit('/',1)[0]
 
@@ -232,7 +237,12 @@ if __name__== "__main__":
     attributes = list(set("".join([i for i in df.seq])))
     sequences = np.array([list(i) for i in df.seq])
     root = Node('root')
-    data = calcID3(sequences, classes, attributes, root)
+    calcID3(sequences, classes, attributes, root)
+    #export tree to json file
+    exporter = JsonExporter()
+    exporter.export(root)
+    with open(treeName+'.json', 'w') as outfile:
+        json.dump(exporter, outfile)
 
     fileTreeLog= open(os.path.join(absPath,"treeLog.txt"),"w+")
 
@@ -240,18 +250,6 @@ if __name__== "__main__":
         fileTreeLog.write("%s%s\n" % (pre, node.name))
 
     fileTreeLog.close()     
-
-
-
-
-    ##############################################################
-
-        #doprowadzić dane do stanu na poczatku
-
-        ########################################################################
-    
-
-
 
 
     
