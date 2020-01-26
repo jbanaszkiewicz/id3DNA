@@ -157,7 +157,7 @@ def getPairsPosNeg(p, n, attributes):
         ePairs.append(ePair)
     return ePairs
 
-def calcID3(sequences, classes, attributes, parentNode, atributeLabel):
+def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
     class1 = classes.count(1)
     class2 = classes.count(0)
 
@@ -191,27 +191,36 @@ def calcID3(sequences, classes, attributes, parentNode, atributeLabel):
 
 
     #stworz drzewo
-    nodeName = str(maxInfGainIdx) +':' + atributeLabel
+    realValueOfPosition = indices[maxInfGainIdx]
+    nodeName = str(realValueOfPosition) +':' + atributeLabel
+
     node = Node(nodeName, idx=maxInfGainIdx, attributeLabel=atributeLabel, parent=parentNode)
     #podziel dane wg s0 i znowu policz InformationGain
     
-    dataA = {"sequences": [], 'y': []} 
-    dataC = {"sequences": [], 'y': []} 
-    dataG = {"sequences": [], 'y': []} 
-    dataT = {"sequences": [], 'y': []} 
+    dataA = {"sequences": [], 'y': []} #,'indices' : []} 
+    dataC = {"sequences": [], 'y': []} #,'indices' : []} 
+    dataG = {"sequences": [], 'y': []} #,'indices' : []} 
+    dataT = {"sequences": [], 'y': []} #,'indices' : []}   
+    
+  
     for idx, sequence in enumerate(sequences):
         if sequence[maxInfGainIdx] == 'A':
             dataA['sequences'].append(sequence)
             dataA['y'].append(classes[idx])
+            #dataA['indices'].append(indices)
         elif sequence[maxInfGainIdx] == 'C':
             dataC['sequences'].append(sequence)
             dataC['y'].append(classes[idx])
+            #dataC['indices'].append(indices)
         elif sequence[maxInfGainIdx] == 'G':
             dataG['sequences'].append(sequence)
             dataG['y'].append(classes[idx])
+            #dataG['indices'].append(indices)
         elif sequence[maxInfGainIdx] == 'T':
             dataT['sequences'].append(sequence)
-            dataT['y'].append(classes[idx])         
+            dataT['y'].append(classes[idx])                  
+            #dataT['indices'].append(indices)
+  
 
     # sequences = np.delete(sequences, infGainLead, 1)
     nodeData = [dataG , dataA , dataT , dataC ]
@@ -220,7 +229,9 @@ def calcID3(sequences, classes, attributes, parentNode, atributeLabel):
     for data in nodeData:
         try :
             data['sequences'] = np.delete(data['sequences'], maxInfGainIdx, 1)
-            calcID3(data['sequences'], data['y'], attributes, node, labels[indData]) 
+            tempIndex = deepcopy(indices)  
+            del tempIndex[maxInfGainIdx]
+            calcID3(data['sequences'], data['y'], attributes, tempIndex, node, labels[indData]) 
         except ValueError:
             print("cannot delete - data node is empty")
         indData +=1    
@@ -233,9 +244,10 @@ def predict(X, tree):
 if __name__== "__main__":
     parser = argparse.ArgumentParser("Program to make id3 tree on DNA data")
     parser.add_argument('mode', type=str, choices=["train", "pred"], help='choose mode of the program- [train, pred]')
-    args = parser.parse_args()
-    print(args)
-    mode = args.mode
+    #args = parser.parse_args()
+    #print(args)
+    #mode = args.mode
+    mode = "train"
     treeName = 'tree'
     if mode == "train":
         fileAbsPath = os.path.realpath(__file__) 
@@ -250,7 +262,8 @@ if __name__== "__main__":
         attributes = list(set("".join([i for i in df.seq])))
         sequences = np.array([list(i) for i in df.seq])
         root = Node('root')
-        calcID3(sequences, classes, attributes, root, 'root')
+        indices = [*range(0, sequences.shape[1])]
+        calcID3(sequences, classes, attributes,indices, root, 'root')
         #export tree to json file
         exporter = JsonExporter()
         with open(treeName+'.json', 'w') as outfile:
