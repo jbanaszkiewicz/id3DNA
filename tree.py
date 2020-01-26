@@ -170,10 +170,10 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
 
     # jak działa ten warunek - class1 i class2 to liczby
     if not class1 or not class2:
-        if not class1:
-            node = Node('False', attributeLabel=atributeLabel, finalNode=True, parent=parentNode)
+        if class1==0:
+            node = Node(0, attributeLabel=atributeLabel, finalNode=True, parent=parentNode)
         else:
-            node = Node('True', attributeLabel=atributeLabel, finalNode=True, parent=parentNode)
+            node = Node(1, attributeLabel=atributeLabel, finalNode=True, parent=parentNode)
         return
     #TODO tu się dzieje ciekawa akcja. Okazuje się, ze jak w drugim przejsciu drzewo trafia na galaź, gdzie podzbiory C, G, T 
     # mają tylko negatywne przyklady, to nie da sie dla nich policzyc InformationGain. Trzebaby je wydzielic jako osobne liscie
@@ -299,14 +299,13 @@ if __name__== "__main__":
         # print(sequence)
         # print(y)
         y_preds = predictBatch(sequences, root)
-        y_preds = [1 if i==True else 0 for i in y_preds]
         answers = {'good': 0, 'bad': 0}
         for y, y_pred in zip(ys, y_preds):
             if y == y_pred:
                 answers['good'] += 1
             else:
                 answers['bad'] += 1
-        a=3
+        print(answers)
         # print(RenderTree(root)) 
       
 
