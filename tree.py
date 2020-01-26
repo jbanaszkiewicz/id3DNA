@@ -166,7 +166,10 @@ def calcID3(sequences, classes, attributes, parentNode):
 
     # jak działa ten warunek - class1 i class2 to liczby
     if not class1 or not class2:
-        node = Node('Last', sequences=sequences, classes=classes, parent=parentNode)
+        if class1 == 0:
+            node = Node('True', sequences=sequences, classes=classes, parent=parentNode)
+        else:
+            node = Node('False', sequences=sequences, classes=classes, parent=parentNode)
         return
     #TODO tu się dzieje ciekawa akcja. Okazuje się, ze jak w drugim przejsciu drzewo trafia na galaź, gdzie podzbiory C, G, T 
     # mają tylko negatywne przyklady, to nie da sie dla nich policzyc InformationGain. Trzebaby je wydzielic jako osobne liscie
