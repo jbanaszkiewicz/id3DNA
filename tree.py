@@ -232,7 +232,17 @@ def predictSingle(x, root):
     while node.finalNode ==False:
         currentAttribute = x[node.idx]
         children = node.children
-        node = [n  for n in children if n.attributeLabel==currentAttribute][0]
+        node = []
+        for n in children:
+            if currentAttribute==n.attributeLabel:
+                node = n
+            elif currentAttribute=='S':
+                if n.attributeLabel== 'G' or n.attributeLabel== 'C':
+                node.append(n)
+            elif 
+                
+
+        node = [n  for n in children if n.attributeLabel==currentAttribute]
         i +=1
     return node.name
 
