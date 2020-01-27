@@ -295,35 +295,42 @@ def predictBatch(X, root):
 average = []
 if __name__== "__main__":
     parser = argparse.ArgumentParser("Program to make id3 tree on DNA data")
-    parser.add_argument('-mode', '--m', type=str, choices=["train", "pred", 'kValid'], help='choose mode of the program- [train, pred,kValid]')
-    parser.add_argument('-source', '--s', type=str,  help='Path to the data source')
-    # parser.add_argument('-source', '--s', type=str,  help='Path to the data source')
+    parser.add_argument('-m', '--mode', type=str, choices=["train", "pred", 'kValid'], help='choose mode of the program- [train, pred,kValid]')
+    parser.add_argument('-s', '--source', type=str,  help='Path to the data source')
+    parser.add_argument('-tN', '--treeName', type=str,  help='name of the tree')
+    parser.add_argument('-tS', '--treeSource', type=str,  default=None, help='path to the tree, on wchih script should run validation')
+
 
     args = parser.parse_args()
-    #print(args)
-    mode = args.m
-    print(mode)
-    pathData = os.path.normpath(args.s)
-    print(mode, " ", pathData)
-    fileAbsPath = os.path.realpath(__file__) 
-    absPath = fileAbsPath.rsplit('/',1)[0]
-    filepath =  absPath +"/"+ pathData
 
-    mode = "train"
-    treeName = 'tree'
+    mode = args.mode
+
+    filepath = os.path.normpath(args.source)
+
+    treeName = args.treeName
+    treeSource = args.treeSource
 
     
 
     data = loadData(filepath)[1:]
     cutNr = int(data[0])
     df = prepareData(data, filterNS=True)
-
-    #cross validation
     classesOrigin = list(df.y)
     attributes = list(set("".join([i for i in df.seq])))
     sequencesOrigin = np.array([list(i) for i in df.seq])
-    kf = KFold(n_splits=10, shuffle=True)
-    idxs = [(trainIdxs, testIdxs) for trainIdxs, testIdxs in kf.split(classesOrigin)]
+    if mode == 'kValid':
+        
+        kf = KFold(n_splits=10, shuffle=True)
+        idxs = [(trainIdxs, testIdxs) for trainIdxs, testIdxs in kf.split(classesOrigin)]
+    elif mode == 'train' or mode == 'pred':
+        idxs = [0]
+
+    if mode == 'train':
+        classesTrain = classesOrigin
+        sequencesTrain = sequencesOrigin
+    elif mode == 'pred':
+        classesVal = classesOrigin
+        sequencesVal = sequencesOrigin
     for portion1 in idxs:
         # with open("indeksyBezNS.txt", "wb") as fp:   
         #     pickle.dump(portion1, fp)
@@ -331,48 +338,48 @@ if __name__== "__main__":
             # with open("indeksyBezNS.txt", "rb") as fp:   # Unpickling
             #     portion1 = pickle.load(fp)
             # print(len(portion1[0]), " ", len(portion1[1]))
-            
-        sequencesTrain = [sequencesOrigin[idx] for idx in portion1[0]]
-        sequencesVal = [sequencesOrigin[idx] for idx in portion1[1]]
+        if mode == 'kValid':
+            sequencesTrain = [sequencesOrigin[idx] for idx in portion1[0]]
+            sequencesVal = [sequencesOrigin[idx] for idx in portion1[1]]
+            classesTrain = [classesOrigin[idx] for idx in portion1[0]]
+            classesVal = [classesOrigin[idx] for idx in portion1[1]]
+        
 
-        classesTrain = [classesOrigin[idx] for idx in portion1[0]]
-        classesVal = [classesOrigin[idx] for idx in portion1[1]]
-        # except IndexError:
-        #     print(np.shape(sequences))
-        if mode == "train":
-            
 
+            
+        if mode == 'kValid' or mode == 'train':
             sequences = np.array(sequencesTrain)
             classes = classesTrain
             indices = [*range(0, sequences.shape[1])]
             root = Node('root', finalNode=False)
             calcID3(sequences, classes, attributes,indices, root, 'root')
-            #export tree to json file
-            # exporter = JsonExporter()
-            # with open(treeName+'.json', 'w') as outfile:
-            #     json.dump(exporter.export(root), outfile)
 
-            # fileTreeLog= open(os.path.join(absPath,"treeLog.txt"),"w+")
-            # for row in RenderTree(root):
-            #     fileTreeLog.write("%s%s\n" % (row.pre, row.node.name))
+        if mode == 'train':
+            # export tree to json file
+            exporter = JsonExporter()
+            with open(treeName+'.json', 'w') as outfile:
+                json.dump(exporter.export(root), outfile)
+            # export visual version of the tree
+            fileTreeLog= open(treeName+"Picture.txt","w+")
+            for row in RenderTree(root):
+                fileTreeLog.write("%s%s\n" % (row.pre, row.node.name))
         
-            # for pre, fill, node in RenderTree(root):
-            #     fileTreeLog.write("%s%s\n" % (pre, node.name))
+            for pre, fill, node in RenderTree(root):
+                fileTreeLog.write("%s%s\n" % (pre, node.name))
 
-            # fileTreeLog.close()  
-        mode = "pred"
-
-        if mode == "pred":
+            fileTreeLog.close()  
+        
+        if mode == 'pred' or mode == 'kValid':
 
             sequences = sequencesVal
             ys = classesVal
 
             #import tree from json file
-            # with open(treeName+'.json') as infile:
-            #     jsonTree = json.load(infile)
-            # importer = JsonImporter()
-            # root = importer.import_(jsonTree)
-            # print(sequence)
+            with open(treeSource) as infile:
+                jsonTree = json.load(infile)
+            importer = JsonImporter()
+            root = importer.import_(jsonTree)
+
             y_preds = predictBatch(sequences, root)
             y_preds = [y_pred[0] if len(y_pred)==1 else int(np.median(y_pred)) for y_pred in y_preds]
             answers = {'good': 0, 'bad': 0}
@@ -382,11 +389,12 @@ if __name__== "__main__":
                 else:
                     answers['bad'] += 1
             print(answers['good']/(answers['good']+answers['bad']))
+    
             # print(RenderTree(root)) 
             average.append(answers['good']/(answers['good']+answers['bad']))
-        mode = "train"
-
-    print('srednio: ', np.mean(average))
+        
+    if mode == 'kValid':
+        print('srednio: ', np.mean(average))
       
 
 
