@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import operator
+import collections
 from copy import deepcopy
 from math import log
 from anytree import Node, RenderTree
@@ -37,6 +38,19 @@ def prepareData(data, filterNS=False):
     dataLocal = deepcopy(data)
     dataLocal = np.reshape(a=dataLocal, newshape=(int(len(dataLocal)/2), 2))
     df = pd.DataFrame(dataLocal, columns=['y', "seq"])
+  
+    onlySeq = df["seq"].values.tolist()
+    indicesPairs = findDuplicates(onlySeq)
+
+    for pair in indicesPairs:        
+        if dataLocal[pair[0]][0] != dataLocal[pair[1]][0]: 
+            print("Found contradiction")
+            print(pair[0],dataLocal[pair[0]], pair[1], dataLocal[pair[1]]) 
+            print("Removing one with TRUE")
+            df.drop(pair[0])
+   ### tutaj trzeba usunąć ten wiersz - mozna dopisac wybór argumentu z jednynką - a teraz pair[0] usuwa ten z jedynką
+   
+
     if filterNS:
         sequences = np.array([list(i) for i in df.seq])
         dataF = filterLetters(list(dataLocal), sequences)
@@ -165,13 +179,8 @@ def getPairsPosNeg(p, n, attributes):
 def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
     class1 = classes.count(1)
     class2 = classes.count(0)
-    print(np.shape(sequences), "   ", np.shape(classes))
-    p, n, pAn = countFrequencyClasses(sequences, attributes, classes)
-    frequencies = calculate_frequency(pAn) 
-    entropyL = calculate_entropyLabel(classes)
-    #licze liczebnosc klas dobre/zle (target)
-    ePairs = getPairsPosNeg(p, n, attributes) #attributes nie jest używane tutaj
-                                              # w frequencies parametry są policzone w kolejności ACGT, a w ePairs kolejność jest inna - GTAC - to moze byc dalej wazne...sprawdze
+
+
 
     # jak działa ten warunek - class1 i class2 to liczby
     if not class1 or not class2:
@@ -180,6 +189,19 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
         else:
             node = Node(1, attributeLabel=atributeLabel, finalNode=True, pozneg = (1, 0), parent=parentNode)
         return
+
+    print(np.shape(sequences), "   ", np.shape(classes))
+
+    if(np.shape(sequences) == (2,6) and np.shape(classes) == (2,)):
+        a = 3
+
+    p, n, pAn = countFrequencyClasses(sequences, attributes, classes)
+    frequencies = calculate_frequency(pAn) 
+    entropyL = calculate_entropyLabel(classes)
+    #licze liczebnosc klas dobre/zle (target)
+    ePairs = getPairsPosNeg(p, n, attributes) #attributes nie jest używane tutaj
+                                              # w frequencies parametry są policzone w kolejności ACGT, a w ePairs kolejność jest inna - GTAC - to moze byc dalej wazne...sprawdze
+
 
     infGains = [informationGain(class1, class2, pair) for pair in ePairs  ]
     #NaN wrzucają się tam, gdzie danej litery nie ma. Trzeba to potem jakos lepiej ogarnac
@@ -284,7 +306,23 @@ def predictSingle(x, root):
     answers = []
     searchFinalNode(x, node, answers)
                 
-    return answers
+    return 
+    
+def findDuplicates(A):
+    n = len(A)
+    duplicates = []
+    indicesDuplicates = []
+
+    for i in range(n):
+        for j in range(i+1,n):
+            if A[i] == A[j]:
+                duplicates.append(A[i])
+                if i not in indicesDuplicates:
+                    indicesDuplicates.append([i,j])
+
+    return indicesDuplicates      
+
+
 
 
 def predictBatch(X, root):
@@ -312,6 +350,10 @@ if __name__== "__main__":
     classesOrigin = list(df.y)
     attributes = list(set("".join([i for i in df.seq])))
     sequencesOrigin = np.array([list(i) for i in df.seq])
+
+    
+
+    
     kf = KFold(n_splits=10, shuffle=True)
     idxs = [(trainIdxs, testIdxs) for trainIdxs, testIdxs in kf.split(classesOrigin)]
     for portion1 in idxs:
