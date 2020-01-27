@@ -28,7 +28,10 @@ def filterLetters(data, sequences):
     dataTemporal = deepcopy(data)
     idxsN = [idx   for  idx, sequence in enumerate(sequences) if np.where(sequence=='N')[0].size]
     idxsS = [idx   for  idx, sequence in enumerate(sequences) if np.where(sequence=='S')[0].size]
-    indices = np.concatenate((idxsN, idxsS))
+    if not idxsS:
+        indices = idxsN
+    else:
+        indices = np.concatenate((idxsN, idxsS))
     for i in sorted(np.unique(indices), reverse=True):
         del dataTemporal[i]
     return dataTemporal
@@ -306,7 +309,7 @@ if __name__== "__main__":
     filepath =  absPath + '/data/spliceDTrainKISnew.dat'
     data = loadData(filepath)[1:]
     cutNr = int(data[0])
-    df = prepareData(data, filterNS=False)
+    df = prepareData(data, filterNS=True)
 
     #cross validation
     classesOrigin = list(df.y)
