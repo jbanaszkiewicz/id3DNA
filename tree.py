@@ -294,7 +294,7 @@ def predictBatch(X, root):
 
 if __name__== "__main__":
     parser = argparse.ArgumentParser("Program to make id3 tree on DNA data")
-    parser.add_argument('-m', '--mode', type=str, choices=["train", "pred", 'kValid'], help='choose mode of the program- [train, pred,kValid]')
+    parser.add_argument('-m', '--mode', type=str, choices=["train", "pred", 'kValid'], help='choose mode of the program')
     parser.add_argument('-s', '--source', type=str,  help='Path to the data source')
     parser.add_argument('-ns', '--nsInclude', type=bool,  default=True, help='Specify if you want to include sequences with N and S in data processing')
     parser.add_argument('-tN', '--treeName', type=str,  help='name of the tree')
