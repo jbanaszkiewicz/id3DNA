@@ -168,6 +168,8 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
     frequencies = calculate_frequency(pAn) 
     entropyL = calculate_entropyLabel(classes)
     #licze liczebnosc klas dobre/zle (target)
+    if not p or not n:
+        a=3
     ePairs = getPairsPosNeg(p, n, attributes) #attributes nie jest używane tutaj
                                               # w frequencies parametry są policzone w kolejności ACGT, a w ePairs kolejność jest inna - GTAC - to moze byc dalej wazne...sprawdze
 
@@ -241,6 +243,8 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
             data['sequences'] = np.delete(data['sequences'], maxInfGainIdx, 1)
             tempIndex = deepcopy(indices)  
             del tempIndex[maxInfGainIdx]
+            if not data['sequences'][0]:
+                a=3
             calcID3(data['sequences'], data['y'], attributes, tempIndex, node, labels[indData]) 
         except ValueError:
             # print("cannot delete - data node is empty")
@@ -301,7 +305,7 @@ if __name__== "__main__":
     fileAbsPath = os.path.realpath(__file__) 
     absPath = fileAbsPath.rsplit('/',1)[0]
 
-    filepath =  absPath + '/data/spliceATrainKIS.dat'
+    filepath =  absPath + '/data/spliceDTrainKIS.dat'
     data = loadData(filepath)[1:]
     cutNr = int(data[0])
     df = prepareData(data, filterNS=False)
@@ -334,6 +338,8 @@ if __name__== "__main__":
             classes = classesTrain
             indices = [*range(0, sequences.shape[1])]
             root = Node('root', finalNode=False)
+            if sequences[0] == [0]:
+                a=3
             calcID3(sequences, classes, attributes,indices, root, 'root')
             #export tree to json file
             # exporter = JsonExporter()
