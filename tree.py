@@ -375,10 +375,11 @@ if __name__== "__main__":
             ys = classesVal
 
             #import tree from json file
-            with open(treeSource) as infile:
-                jsonTree = json.load(infile)
-            importer = JsonImporter()
-            root = importer.import_(jsonTree)
+            if mode == 'pred':
+                with open(treeSource) as infile:
+                    jsonTree = json.load(infile)
+                importer = JsonImporter()
+                root = importer.import_(jsonTree)
 
             y_preds = predictBatch(sequences, root)
             y_preds = [y_pred[0] if len(y_pred)==1 else int(np.median(y_pred)) for y_pred in y_preds]
@@ -388,7 +389,7 @@ if __name__== "__main__":
                     answers['good'] += 1
                 else:
                     answers['bad'] += 1
-            print(answers['good']/(answers['good']+answers['bad']))
+            print("Wynik predykcji: "+str(answers['good']/(answers['good']+answers['bad'])))
     
             # print(RenderTree(root)) 
             average.append(answers['good']/(answers['good']+answers['bad']))
