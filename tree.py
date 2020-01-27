@@ -25,6 +25,9 @@ def loadData(filepath):
     return data
 
 def filterLetters(data, sequences):
+    """
+    Funkcja filtruje ze zbioru litery N i S. Jej wykorzystanie w kodzie jest opcjonalne
+    """
     dataTemporal = deepcopy(data)
     idxsN = [idx   for  idx, sequence in enumerate(sequences) if np.where(sequence=='N')[0].size]
     idxsS = [idx   for  idx, sequence in enumerate(sequences) if np.where(sequence=='S')[0].size]
@@ -37,6 +40,9 @@ def filterLetters(data, sequences):
     return dataTemporal
 
 def prepareData(data, filterNS=False):
+    """
+    Funkcja przygotowywuje dane do dalszego przetwarzania
+    """
     dataLocal = deepcopy(data)
     dataLocal = np.reshape(a=dataLocal, newshape=(int(len(dataLocal)/2), 2))
     df = pd.DataFrame(dataLocal, columns=['y', "seq"])
@@ -103,6 +109,9 @@ def entropy(e1, e2, *rest):
 
 
 def calculate_entropyLabel(labels):
+    """
+    liczy entropię dla klas
+    """
     p = 0
     n = 0
     for ridx, row in enumerate(labels):
@@ -128,7 +137,7 @@ def calculate_entropyLabel(labels):
 
 def informationGain(class1, class2, feature):
     #licze entropie E(S)
-    es = entropy(class1, class2) # niewydajna funkcja do optymalizacji - mozna zamienic w jedno rownanie
+    es = entropy(class1, class2) # niewydajna funkcja do optymalizacji
 #     if not rest:
 #         eArgsP = np.array([e1pair, e2pair]).astype(float)
 #     else:
@@ -166,6 +175,9 @@ def getPairsPosNeg(p, n, attributes):
     return ePairs
 
 def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
+    """
+    Funkcja tworzy rekurencyjnie drzewo ID3
+    """
     class1 = classes.count(1)
     class2 = classes.count(0)
     p, n, pAn = countFrequencyClasses(sequences, attributes, classes)
@@ -198,10 +210,10 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
     node = Node(nodeName, idx=realValueOfPosition, attributeLabel=atributeLabel, finalNode=False, pozneg = (class1, class2),parent=parentNode)
     #podziel dane wg s0 i znowu policz InformationGain
     
-    dataA = {"sequences": [], 'y': []} #,'indices' : []} 
-    dataC = {"sequences": [], 'y': []} #,'indices' : []} 
-    dataG = {"sequences": [], 'y': []} #,'indices' : []} 
-    dataT = {"sequences": [], 'y': []} #,'indices' : []}   
+    dataA = {"sequences": [], 'y': []} 
+    dataC = {"sequences": [], 'y': []}  
+    dataG = {"sequences": [], 'y': []}  
+    dataT = {"sequences": [], 'y': []}    
     
   
     for idx, sequence in enumerate(sequences):
@@ -236,7 +248,6 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
             dataT['y'].append(classes[idx])
 
 
-    # sequences = np.delete(sequences, infGainLead, 1)
     nodeData = [dataG , dataA , dataT , dataC ]
     labels = ['G','A','T','C']
     indData = 0
@@ -252,6 +263,9 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
         indData +=1    
 
 def searchFinalNode(x, node, answers):
+    """
+    Funkcja wyszukuje finalnych węzłów dla przykładu
+    """
     currentAttribute = x[node.idx]
     children = node.children
     newNodes = []
@@ -282,6 +296,9 @@ def searchFinalNode(x, node, answers):
             searchFinalNode(x, n, answers)
         
 def predictSingle(x, root):
+    """
+    Funkcja znajduje odpowiedz drzewa dla podanego przykladu
+    """
     node = root.children[0]
     answers = []
     searchFinalNode(x, node, answers)
@@ -290,6 +307,9 @@ def predictSingle(x, root):
 
 
 def predictBatch(X, root):
+    """
+    Funkcja znajduje odpowiedzi drzewa dla całego zbioru przykladow
+    """
     return [predictSingle(i, root) for i in X]
 
 if __name__== "__main__":
@@ -319,7 +339,7 @@ if __name__== "__main__":
     attributes = list(set("".join([i for i in df.seq])))
     sequencesOrigin = np.array([list(i) for i in df.seq])
     if mode == 'kValid':
-        
+        #walidacja krzyzowa
         kf = KFold(n_splits=10, shuffle=True)
         idxs = [(trainIdxs, testIdxs) for trainIdxs, testIdxs in kf.split(classesOrigin)]
     elif mode == 'train' or mode == 'pred':
@@ -334,12 +354,6 @@ if __name__== "__main__":
     if mode == 'pred' or mode == 'kValid':
         average = []
     for portion1 in idxs:
-        # with open("indeksyBezNS.txt", "wb") as fp:   
-        #     pickle.dump(portion1, fp)
-
-            # with open("indeksyBezNS.txt", "rb") as fp:   # Unpickling
-            #     portion1 = pickle.load(fp)
-            # print(len(portion1[0]), " ", len(portion1[1]))
         if mode == 'kValid':
             sequencesTrain = [sequencesOrigin[idx] for idx in portion1[0]]
             sequencesVal = [sequencesOrigin[idx] for idx in portion1[1]]
@@ -354,6 +368,7 @@ if __name__== "__main__":
             classes = classesTrain
             indices = [*range(0, sequences.shape[1])]
             root = Node('root', finalNode=False)
+            #stworz drzewo ID3
             calcID3(sequences, classes, attributes,indices, root, 'root')
 
         if mode == 'train':
@@ -382,7 +397,7 @@ if __name__== "__main__":
                     jsonTree = json.load(infile)
                 importer = JsonImporter()
                 root = importer.import_(jsonTree)
-
+            #przeprowadz predykcje na zbiorze
             y_preds = predictBatch(sequences, root)
             y_preds = [y_pred[0] if len(y_pred)==1 else int(np.median(y_pred)) for y_pred in y_preds]
             answers = {'good': 0, 'bad': 0}
