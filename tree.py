@@ -292,14 +292,14 @@ def predictSingle(x, root):
 def predictBatch(X, root):
     return [predictSingle(i, root) for i in X]
 
-average = []
 if __name__== "__main__":
     parser = argparse.ArgumentParser("Program to make id3 tree on DNA data")
     parser.add_argument('-m', '--mode', type=str, choices=["train", "pred", 'kValid'], help='choose mode of the program- [train, pred,kValid]')
     parser.add_argument('-s', '--source', type=str,  help='Path to the data source')
+    parser.add_argument('-ns', '--nsInclude', type=bool,  default=True, help='Specify if you want to include sequences with N and S in data processing')
     parser.add_argument('-tN', '--treeName', type=str,  help='name of the tree')
     parser.add_argument('-tS', '--treeSource', type=str,  default=None, help='path to the tree, on wchih script should run validation')
-
+    
 
     args = parser.parse_args()
 
@@ -314,7 +314,7 @@ if __name__== "__main__":
 
     data = loadData(filepath)[1:]
     cutNr = int(data[0])
-    df = prepareData(data, filterNS=True)
+    df = prepareData(data, filterNS=args.nsInclude)
     classesOrigin = list(df.y)
     attributes = list(set("".join([i for i in df.seq])))
     sequencesOrigin = np.array([list(i) for i in df.seq])
@@ -331,6 +331,8 @@ if __name__== "__main__":
     elif mode == 'pred':
         classesVal = classesOrigin
         sequencesVal = sequencesOrigin
+    if mode == 'pred' or mode == 'kValid':
+        average = []
     for portion1 in idxs:
         # with open("indeksyBezNS.txt", "wb") as fp:   
         #     pickle.dump(portion1, fp)
