@@ -168,10 +168,6 @@ def getPairsPosNeg(p, n, attributes):
 def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
     class1 = classes.count(1)
     class2 = classes.count(0)
-<<<<<<< HEAD
-    # print(np.shape(sequences), "   ", np.shape(classes))
-=======
->>>>>>> inputParams
     p, n, pAn = countFrequencyClasses(sequences, attributes, classes)
     frequencies = calculate_frequency(pAn) 
     entropyL = calculate_entropyLabel(classes)
@@ -301,7 +297,7 @@ if __name__== "__main__":
     parser = argparse.ArgumentParser("Program to make id3 tree on DNA data")
     parser.add_argument('-mode', '--m', type=str, choices=["train", "pred", 'kValid'], help='choose mode of the program- [train, pred,kValid]')
     parser.add_argument('-source', '--s', type=str,  help='Path to the data source')
-    parser.add_argument('-source', '--s', type=str,  help='Path to the data source')
+    # parser.add_argument('-source', '--s', type=str,  help='Path to the data source')
 
     args = parser.parse_args()
     #print(args)
@@ -318,10 +314,6 @@ if __name__== "__main__":
 
     
 
-<<<<<<< HEAD
-    filepath =  absPath + '/data/spliceDTrainKISnew.dat'
-=======
->>>>>>> inputParams
     data = loadData(filepath)[1:]
     cutNr = int(data[0])
     df = prepareData(data, filterNS=True)
