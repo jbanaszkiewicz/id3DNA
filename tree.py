@@ -47,7 +47,7 @@ def prepareData(data, filterNS=False):
             print("Found contradiction")
             print(pair[0],dataLocal[pair[0]], pair[1], dataLocal[pair[1]]) 
             print("Removing one with TRUE")
-            df.drop(pair[0])
+            df.drop(pair[0], inplace=True)
    ### tutaj trzeba usunąć ten wiersz - mozna dopisac wybór argumentu z jednynką - a teraz pair[0] usuwa ten z jedynką
    
 
