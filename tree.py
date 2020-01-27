@@ -35,7 +35,7 @@ def filterLetters(data, sequences):
 
 def prepareData(data, filterNS=False):
     dataLocal = deepcopy(data)
-    dataLocal = np.reshape(a=dataLocal, newshape=(int(11576/2), 2))
+    dataLocal = np.reshape(a=dataLocal, newshape=(int(len(dataLocal)/2), 2))
     df = pd.DataFrame(dataLocal, columns=['y', "seq"])
     if filterNS:
         sequences = np.array([list(i) for i in df.seq])
@@ -174,15 +174,10 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
     # jak działa ten warunek - class1 i class2 to liczby
     if not class1 or not class2:
         if class1 == 0:
-            node = Node(0, attributeLabel=atributeLabel, finalNode=True, parent=parentNode)
+            node = Node(0, attributeLabel=atributeLabel, finalNode=True, pozneg = (0, 1), parent=parentNode)
         else:
-            node = Node(1, attributeLabel=atributeLabel, finalNode=True, parent=parentNode)
+            node = Node(1, attributeLabel=atributeLabel, finalNode=True, pozneg = (1, 0), parent=parentNode)
         return
-    #TODO tu się dzieje ciekawa akcja. Okazuje się, ze jak w drugim przejsciu drzewo trafia na galaź, gdzie podzbiory C, G, T 
-    # mają tylko negatywne przyklady, to nie da sie dla nich policzyc InformationGain. Trzebaby je wydzielic jako osobne liscie
-    # i dalej nie przetwarzac. 
-    # Zaobserwujesz to ustawiajac breakpoint w linicje w informationGain:
-    #                            entropies = [entropy(value[0], value[1]) for value in fsAtributes] 
 
     infGains = [informationGain(class1, class2, pair) for pair in ePairs  ]
     #NaN wrzucają się tam, gdzie danej litery nie ma. Trzeba to potem jakos lepiej ogarnac
@@ -196,7 +191,7 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
     #stworz drzewo
     realValueOfPosition = indices[maxInfGainIdx]
     nodeName = str(realValueOfPosition) +':' + atributeLabel
-    node = Node(nodeName, idx=realValueOfPosition, attributeLabel=atributeLabel, finalNode=False, parent=parentNode)
+    node = Node(nodeName, idx=realValueOfPosition, attributeLabel=atributeLabel, finalNode=False, pozneg = (class1, class2),parent=parentNode)
     #podziel dane wg s0 i znowu policz InformationGain
     
     dataA = {"sequences": [], 'y': []} #,'indices' : []} 
@@ -248,7 +243,8 @@ def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
             del tempIndex[maxInfGainIdx]
             calcID3(data['sequences'], data['y'], attributes, tempIndex, node, labels[indData]) 
         except ValueError:
-            print("cannot delete - data node is empty")
+            # print("cannot delete - data node is empty")
+            pass
         indData +=1    
 
 def searchFinalNode(x, node, answers):
@@ -259,14 +255,24 @@ def searchFinalNode(x, node, answers):
             if currentAttribute==chn.attributeLabel:
                 newNodes.append(chn)
             elif currentAttribute=='S':
-                if chn.attributeLabel== 'G' or chn.attributeLabel== 'C':
-                    newNodes.append(chn)
+                for chInner in children:
+                    if chnInner.attributeLabel== 'G' or chnInner.attributeLabel== 'C':
+                        newNodes.append(chnInner)
             elif currentAttribute=='N':
-                newNodes.append(chn)
+                for chInner in children:
+                    newNodes.append(chn)
+    if not newNodes:
+        pozneg = np.zeros(shape=(1, 2))
+        for chn in children:
+            pozneg[0, 0] +=chn.pozneg[0]
+            pozneg[0, 1] +=chn.pozneg[1]
+        if pozneg[0, 0]>pozneg[0, 1]:
+            answers.append(1)
+        else:
+            answers.append(0)
+    
     for n in newNodes:
         if n.finalNode == True:
-            if type(n.name)!=int:
-                print(n)
             answers.append(n.name)
         else:
             searchFinalNode(x, n, answers)
@@ -282,14 +288,14 @@ def predictSingle(x, root):
 def predictBatch(X, root):
     return [predictSingle(i, root) for i in X]
 
-
+average = []
 if __name__== "__main__":
     # parser = argparse.ArgumentParser("Program to make id3 tree on DNA data")
     # parser.add_argument('mode', type=str, choices=["train", "pred"], help='choose mode of the program- [train, pred]')
     #args = parser.parse_args()
     #print(args)
     #mode = args.mode
-    mode = "pred"
+    mode = "train"
     treeName = 'tree'
 
     fileAbsPath = os.path.realpath(__file__) 
@@ -298,71 +304,77 @@ if __name__== "__main__":
     filepath =  absPath + '/data/spliceATrainKIS.dat'
     data = loadData(filepath)[1:]
     cutNr = int(data[0])
-    df = prepareData(data, filterNS=True)
+    df = prepareData(data, filterNS=False)
 
     #cross validation
-    classes = list(df.y)
+    classesOrigin = list(df.y)
     attributes = list(set("".join([i for i in df.seq])))
-    sequences = np.array([list(i) for i in df.seq])
-    # kf = KFold(n_splits=10, shuffle=True)
-    # idxs = [(trainIdxs, testIdxs) for trainIdxs, testIdxs in kf.split(classes)]
-    # portion1 = idxs[0]
-    # with open("indeksy.txt", "wb") as fp:   
-    #     pickle.dump(portion1, fp)
+    sequencesOrigin = np.array([list(i) for i in df.seq])
+    kf = KFold(n_splits=10, shuffle=True)
+    idxs = [(trainIdxs, testIdxs) for trainIdxs, testIdxs in kf.split(classesOrigin)]
+    for portion1 in idxs:
+        # with open("indeksyBezNS.txt", "wb") as fp:   
+        #     pickle.dump(portion1, fp)
 
-    with open("indeksy.txt", "rb") as fp:   # Unpickling
-        portion1 = pickle.load(fp)
+            # with open("indeksyBezNS.txt", "rb") as fp:   # Unpickling
+            #     portion1 = pickle.load(fp)
+            # print(len(portion1[0]), " ", len(portion1[1]))
+            
+        sequencesTrain = [sequencesOrigin[idx] for idx in portion1[0]]
+        sequencesVal = [sequencesOrigin[idx] for idx in portion1[1]]
 
-    sequencesTrain = [sequences[idx] for idx in portion1[0]]
-    sequencesVal = [sequences[idx] for idx in portion1[1]]
+        classesTrain = [classesOrigin[idx] for idx in portion1[0]]
+        classesVal = [classesOrigin[idx] for idx in portion1[1]]
+        # except IndexError:
+        #     print(np.shape(sequences))
+        if mode == "train":
+            
 
-    classesTrain = [classes[idx] for idx in portion1[0]]
-    classesVal = [classes[idx] for idx in portion1[1]]
-    
-    
-    if mode == "train":
+            sequences = np.array(sequencesTrain)
+            classes = classesTrain
+            indices = [*range(0, sequences.shape[1])]
+            root = Node('root', finalNode=False)
+            calcID3(sequences, classes, attributes,indices, root, 'root')
+            #export tree to json file
+            # exporter = JsonExporter()
+            # with open(treeName+'.json', 'w') as outfile:
+            #     json.dump(exporter.export(root), outfile)
+
+            # fileTreeLog= open(os.path.join(absPath,"treeLog.txt"),"w+")
+            # for row in RenderTree(root):
+            #     fileTreeLog.write("%s%s\n" % (row.pre, row.node.name))
         
+            # for pre, fill, node in RenderTree(root):
+            #     fileTreeLog.write("%s%s\n" % (pre, node.name))
 
-        sequences = np.array(sequencesTrain)
-        classes = classesTrain
-        indices = [*range(0, sequences.shape[1])]
-        root = Node('root', finalNode=False)
-        calcID3(sequences, classes, attributes,indices, root, 'root')
-        #export tree to json file
-        exporter = JsonExporter()
-        with open(treeName+'.json', 'w') as outfile:
-            json.dump(exporter.export(root), outfile)
+            # fileTreeLog.close()  
+        mode = "pred"
 
-        fileTreeLog= open(os.path.join(absPath,"treeLog.txt"),"w+")
-        for row in RenderTree(root):
-            fileTreeLog.write("%s%s\n" % (row.pre, row.node.name))
-    
-        # for pre, fill, node in RenderTree(root):
-        #     fileTreeLog.write("%s%s\n" % (pre, node.name))
+        if mode == "pred":
 
-        fileTreeLog.close()  
-    elif mode == "pred":
+            sequences = sequencesVal
+            ys = classesVal
 
-        sequences = sequencesVal
-        ys = classesVal
+            #import tree from json file
+            # with open(treeName+'.json') as infile:
+            #     jsonTree = json.load(infile)
+            # importer = JsonImporter()
+            # root = importer.import_(jsonTree)
+            # print(sequence)
+            y_preds = predictBatch(sequences, root)
+            y_preds = [y_pred[0] if len(y_pred)==1 else int(np.median(y_pred)) for y_pred in y_preds]
+            answers = {'good': 0, 'bad': 0}
+            for y, y_pred in zip(ys, y_preds):
+                if y == y_pred:
+                    answers['good'] += 1
+                else:
+                    answers['bad'] += 1
+            print(answers['good']/(answers['good']+answers['bad']))
+            # print(RenderTree(root)) 
+            average.append(answers['good']/(answers['good']+answers['bad']))
+        mode = "train"
 
-        #import tree from json file
-        with open(treeName+'.json') as infile:
-            jsonTree = json.load(infile)
-        importer = JsonImporter()
-        root = importer.import_(jsonTree)
-        # print(sequence)
-        print(np.shape(ys))
-        y_preds = predictBatch(sequences, root)
-        y_preds = [y_pred[0] if len(y_pred)==1 else int(np.median(y_pred)) for y_pred in y_preds]
-        answers = {'good': 0, 'bad': 0}
-        for y, y_pred in zip(ys, y_preds):
-            if y == y_pred:
-                answers['good'] += 1
-            else:
-                answers['bad'] += 1
-        print(answers)
-        # print(RenderTree(root)) 
+    print('srednio: ', np.mean(average))
       
 
 
