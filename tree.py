@@ -39,17 +39,17 @@ def prepareData(data, filterNS=False):
     dataLocal = np.reshape(a=dataLocal, newshape=(int(len(dataLocal)/2), 2))
     df = pd.DataFrame(dataLocal, columns=['y', "seq"])
   
-    onlySeq = df["seq"].values.tolist()
-    indicesPairs = findDuplicates(onlySeq)
-
-    for pair in indicesPairs:        
-        if dataLocal[pair[0]][0] != dataLocal[pair[1]][0]: 
-            print("Found contradiction")
-            print(pair[0],dataLocal[pair[0]], pair[1], dataLocal[pair[1]]) 
-            print("Removing one with TRUE")
-            df.drop(pair[0], inplace=True)
-   ### tutaj trzeba usunąć ten wiersz - mozna dopisac wybór argumentu z jednynką - a teraz pair[0] usuwa ten z jedynką
-   
+    ##czyszczenie danych ze sprzecznych wartości - dla tej samej sekwencji inna
+    #
+    # onlySeq = df["seq"].values.tolist()
+    # indicesPairs = findDuplicates(onlySeq)
+    # for pair in indicesPairs:        
+    #     if dataLocal[pair[0]][0] != dataLocal[pair[1]][0]: 
+    #         print("Found contradiction")
+    #         print(pair[0],dataLocal[pair[0]], pair[1], dataLocal[pair[1]]) 
+    #         print("Removing one with TRUE")
+    #         df.drop(pair[0], inplace=True) # usun jedeną z pary sprzecznych sekwencji
+      
 
     if filterNS:
         sequences = np.array([list(i) for i in df.seq])
