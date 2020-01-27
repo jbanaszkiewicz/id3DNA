@@ -165,7 +165,7 @@ def getPairsPosNeg(p, n, attributes):
 def calcID3(sequences, classes, attributes, indices, parentNode, atributeLabel):
     class1 = classes.count(1)
     class2 = classes.count(0)
-    print(np.shape(sequences), "   ", np.shape(classes))
+    # print(np.shape(sequences), "   ", np.shape(classes))
     p, n, pAn = countFrequencyClasses(sequences, attributes, classes)
     frequencies = calculate_frequency(pAn) 
     entropyL = calculate_entropyLabel(classes)
@@ -303,7 +303,7 @@ if __name__== "__main__":
     fileAbsPath = os.path.realpath(__file__) 
     absPath = fileAbsPath.rsplit('/',1)[0]
 
-    filepath =  absPath + '/data/spliceDTrainKIS.dat'
+    filepath =  absPath + '/data/spliceDTrainKISnew.dat'
     data = loadData(filepath)[1:]
     cutNr = int(data[0])
     df = prepareData(data, filterNS=False)
